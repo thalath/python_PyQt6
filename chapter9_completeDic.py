@@ -336,7 +336,7 @@ class DataExporter:
                 data["user_profile"] = dict(self.user_profile.profile)
                 # Covert defaultdicts to regular dicts for JSON serialization
                 if "word_preferences" in data["user_profile"]:
-                    data["user_profile"]["word_preferences"] = dict(data["user_profile"["word_preferences"]])
+                    data["user_profile"]["word_preferences"] = dict(data["user_profile"]["word_preferences"])
                 if "favorite_word_types" in data["user_profile"]:
                     data["user_profile"]["favorite_word_types"] = dict(data["user_profile"]["favorite_word_types"])
 
@@ -1026,9 +1026,9 @@ class AIExplanationGenerator:
             rule = self.grammar_rules[word_type]
             explanation += f"""
             <h4>Grammar Structure:</h4>
-            <p><strong>Rule:<strong> {rule['structure']}</p>
-            <p><strong>Rule:<strong> {rule['usage']}</p>
-            <p><strong>Rule:<strong> {rule['example']}</p>
+            <p><strong>Rule:</strong> {rule['structure']}</p>
+            <p><strong>Usage:</strong> {rule['usage']}</p>
+            <p><strong>Pattern:</strong> {rule['example']}</p>
             """
             
         # Word analysis
@@ -1049,24 +1049,24 @@ class AIExplanationGenerator:
             <p>{cultural_notes}</p>
             """
             
-            # Usage tips
-            tips = self._generate_usage_tips(english, khmer, word_type)
-            explanation += f"""
-            <h4>Usage Tips</h4>
-            <ul>
-            """
-            for tip in tips:
-                explanation += f"<li>{tip}</li>"
-            explanation += "</ul>"
+        # Usage tips
+        tips = self._generate_usage_tips(english, khmer, word_type)
+        explanation += f"""
+        <h4>Usage Tips</h4>
+        <ul>
+        """
+        for tip in tips:
+            explanation += f"<li>{tip}</li>"
+        explanation += "</ul>"
             
-            # Related concepts
-            explanation += f"""
-            <h4>Learning Connections:</h4>
-            <p>This word connects to: {word_type} vocabulary, Khmer script practice,
-            {'formal speech patterns' if len(english) > 6 else 'basic conversation'}</p>
-            """
+        # Related concepts
+        explanation += f"""
+        <h4>Learning Connections:</h4>
+        <p>This word connects to: {word_type} vocabulary, Khmer script practice,
+        {'formal speech patterns' if len(english) > 6 else 'basic conversation'}</p>
+        """
             
-            return explanation
+        return explanation
     
     def _get_cultural_notes(self, english: str, khmer: str, word_type: str) -> str:
         """Get cultural context for the word"""
@@ -1142,7 +1142,7 @@ class DictionaryDatabase:
                 word_type TEXT DEFAULT 'noun',
                 definition TEXT,
                 example_sentence TEXT,
-                difficulty_level TEXT DEFAULR 'beginner',
+                difficulty_level TEXT DEFAULT 'beginner',
                 frequency_score INTEGER DEFAULT 1,
                 cultural_tags TEXT,
                 grammar_notes TEXT,
@@ -1189,7 +1189,7 @@ class DictionaryDatabase:
                 ("teacher", "គ្រូ", "noun", "Education provider", "The teacher explains well", "intermediate", 5, "education,respect", "Highly respect profession"),
                 ("mother", "ម្ដាយ", "noun", "Femal parent", "I love my mother", "beginner", 8, "family,respect", "Very important family role"),
                 ("father", "ឪពុក", "noun", "male parent", "My father works hard", "beginner", 8, "family,respect", "Family head traditional"),
-                ("beautiful", "ម្ដាយ", "adjective", "Pleasing appearance", "She is beautiful", "intermediate",6, "description,appearance", "Common compliment"),
+                ("beautiful", "ស្រស់ស្អាត", "adjective", "Pleasing appearance", "She is beautiful", "intermediate",6, "description,appearance", "Common compliment"),
                 ("big", "ធំ", "adjective", "Large size", "This is a big house", "beginner", 7, "size,description", "Basic size descriptor"),
                 ("small", "តូច", "adjective", "Little size", "I have a small car", "beginner", 7, "size,description", "Basic size descriptor"),
                 ("eate", "ញាំ", "verb", "Consume food", "Let's eat together", "beginner", 9, "size,description", "Basic size descriptor"),
@@ -1214,7 +1214,7 @@ class DictionaryDatabase:
     
     def find_similar_words(self, word: str, n: int = 5) -> List[Tuple[str, float]]:
         """Find similar word using embeddings"""
-        return self.embeddings.add_word(word, n)
+        return self.embeddings.find_similar(word, n)
     
     def get_smart_suggestions(self, search_term: str, search_type: str) -> List[Tuple]:
         """Get AI-powered suggestions for faild searches"""
@@ -1230,6 +1230,7 @@ class DictionaryDatabase:
 
         return suggestions[:5] # Return top 5 suggestions
 
+    # Include all method from original DictionaryDatabase
     def create_word(self, englsih_word, khmer_word, word_type="noun", definition="", example="",
                     difficulty="beginner", cultural_tags="", grammar_notes=""):
         """CREATE operation -Add new word to dictionary"""
@@ -1238,7 +1239,7 @@ class DictionaryDatabase:
             cursor = conn.cursor()
             cursor.execute('''
                 INSERT INTO dictionary (english_word, khmer_word, word_type, definition,
-                example_sentence, difficulty_level, cultural_tags, grammar_notes)
+                                        example_sentence, difficulty_level, cultural_tags, grammar_notes)
                 VALUES(?, ?, ?, ?, ?, ?, ?, ?)
             ''', (englsih_word.lower().strip(), khmer_word.strip(), word_type, 
                 definition, example, difficulty, cultural_tags, grammar_notes))
@@ -1247,7 +1248,7 @@ class DictionaryDatabase:
             conn.close()
             
             # Update embeddings
-            context = f"{definition} {cultural_tags}, {grammar_notes}"
+            context = f"{definition} {cultural_tags} {grammar_notes}"
             self.embeddings.add_word(englsih_word, context)
             self.embeddings.add_word(khmer_word, context)
             
@@ -1268,7 +1269,7 @@ class DictionaryDatabase:
                     SELECT * FROM dictionary
                     WHERE english_word LIKE ? OR english_word = ?               
                     ORDER BY frequency_score DESC, english_word
-                ''', (f"%{search_term.lower}%,", search_term.lower()))
+                ''', (f"%{search_term.lower()}%,", search_term.lower()))
             else:
                 cursor.execute('''
                     SELECT * FROM dictionary
@@ -1298,12 +1299,14 @@ class DictionaryDatabase:
         
     def update_word(self, word_id, english_word=None, khmer_word=None, word_type=None, 
                     definition=None, example=None, difficulty=None, cultural_tags=None, grammar_notes=None):
-        """Enhanced UPDATE OPTERATION"""
+        """Enhanced UPDATE operation"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
+        
         try:
             updates = []
             params = []
+
             if english_word is not None:
                 updates.append("english_word = ?")
                 params.append(english_word.lower().strip())
@@ -1313,10 +1316,10 @@ class DictionaryDatabase:
             if word_type is None:
                 updates.append("word_type = ?")
                 params.append(word_type)
-            if definition in None:
+            if definition is None:
                 updates.append("definition = ?")
                 params.append(definition)
-            if example in None:
+            if example is None:
                 updates.append("example_sentence = ?")
                 params.append(example)
             if difficulty is not None:
@@ -1328,14 +1331,14 @@ class DictionaryDatabase:
             if grammar_notes is not None:
                 updates.append("grammar_notes = ?")
                 params.append(grammar_notes)
-
             updates.append("update_at = CURRENT_TIMESTAMP")
             params.append(word_id)
+
             if updates:
                 query = f"UPDATE dictionary SET {', '.join(updates)} WHERE id = ?"
                 cursor.execute(query, params)
                 conn.commit()
-                
+            
             conn.close()
         except Exception as e:
             conn.close()
@@ -1512,7 +1515,7 @@ class DictionaryTableModel(QAbstractTableModel):
 class WordDetailsDialog(QDialog):
     """Dialog for viewing datailed word information"""
 
-    def __init__(self, word_data, font_manager, ai_generator ,parent=None):
+    def __init__(self, word_data, font_manager, ai_generator, parent=None):
         super().__init__(parent)
         self.font_manager = font_manager
         self.word_data = word_data
@@ -1530,7 +1533,6 @@ class WordDetailsDialog(QDialog):
         layout = QVBoxLayout()
 
         if self.word_data:
-            
             # Create scrollable content area
             scroll = QScrollArea()
             scroll_widget = QWidget()
@@ -1546,12 +1548,14 @@ class WordDetailsDialog(QDialog):
 
             # Display word information
             basic_content = f"""
-                <h2 style='color: # 2E7D32;'>{english.title()} ↔ {khmer}</h2>
+                <h2 style="color: #2E7D32;">{english.title()} ↔ {khmer}</h2>
                 <p><strong>Word ID: </strong>{word_id}</p>
                 <p><strong>Word Type: </strong>{word_type.title()}</p>
                 <p><strong>Definition: </strong>{definition or 'No definition provided'}</p>
                 <p><strong>Example: </strong>{example or 'No example provided'}</p>
             """
+            
+            basic_info.setHtml(basic_content)
             
             # Ai explanation
             ai_info = QTextBrowser()
@@ -1564,7 +1568,6 @@ class WordDetailsDialog(QDialog):
             scroll_layout.addWidget(ai_info)
             scroll_widget.setLayout(scroll_layout)
             scroll.setWidget(scroll_widget)
-
             scroll.setWidgetResizable(True)
 
             layout.addWidget(scroll)
@@ -1577,6 +1580,7 @@ class WordDetailsDialog(QDialog):
 
         self.setLayout(layout)
     
+# Enhanced Translator Widget with Expert System but Standard UI
 class TranslatorWidget(QWidget):
     word_searched = pyqtSignal(str, str, bool)
     
@@ -1604,7 +1608,7 @@ class TranslatorWidget(QWidget):
         self.font_manager.apply_font(title, bold=True)
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        subtitle = QLabel("វចនានុក្រមអង់គ្លេស-ខ្មែរ (ដាក់បញ្ចូបញ្ញាសប្បនិម្មិត)")
+        subtitle = QLabel("វចនានុក្រមអង់គ្លេស-ខ្មែរ (ដាក់បញ្ចូលញ្ញាសប្បនិម្មិត)")
         self.font_manager.apply_font(subtitle)
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
@@ -1899,7 +1903,7 @@ class TranslatorWidget(QWidget):
             definition, example = result[4], result[5]
 
             html_content += f"""
-               <div style="border: 1px solid #ccc; margin: 10px 0; padding: 10px; background-color: ffffff;">
+               <div style="border: 1px solid #ccc; margin: 10px 0; padding: 10px; background-color: #ffffff;">
                <h4>{english.title()} <--> {khmer}</h4>
                <p><strong>Type:</strong> {word_type.title()} | <strong>ID:</strong> {word_id}</p>
                {f"<p><strong>Definition:</strong> {definition}</p>" if definition else ""}
@@ -2267,7 +2271,7 @@ class DictionaryManageWidget(QWidget):
 
         # Word type suggestions
         if english_word.endswith('ing'):
-            suggestions.append("COnsider 'verb' as word type")
+            suggestions.append("Consider 'verb' as word type")
             self.type_combo.setCurrentText("verb")
         elif english_word.endswith('ly'):
             suggestions.append("Consider 'Adverb' as word type")
@@ -2351,7 +2355,7 @@ class DictionaryManageWidget(QWidget):
         row = selection[0].row()
         word_data = self.table_model.get_row_data(row)
         if word_data:
-            dialog = WordDetailsDialog(word_data, self.font_manager, self)
+            dialog = WordDetailsDialog(word_data, self.font_manager, self.ai_generator, self)
             dialog.exec()
 
     def update_word(self):
@@ -2364,6 +2368,7 @@ class DictionaryManageWidget(QWidget):
         word_type = self.type_combo.currentText()
         definition = self.definition_input.text().strip()
         example = self.example_input.text().strip()
+        
         if not english or not khmer:
             msg = self.font_manager.create_message_box(
                 self, QMessageBox.Icon.Warning,
@@ -2380,7 +2385,7 @@ class DictionaryManageWidget(QWidget):
             self.word_updated.emit(self.current_edit_id)
 
             msg = self.font_manager.create_message_box(
-                self, QMessageBox.Icon.Warning,
+                self, QMessageBox.Icon.Information,
                 "Success",
                 f"Word updated successfully!\nNew values: {english} -> {khmer}"
             )
@@ -2485,7 +2490,7 @@ class DictionaryManageWidget(QWidget):
         filtered_word = []
 
         for word in words:
-            word_id, english, khmer, word_type, definition, example, created, update = word
+            word_id, english, khmer, word_type, definition, example = word[:6]
             if (filter_text in english.lower() or 
                 filter_text in khmer or
                 filter_text in word_type.lower() or 
@@ -2493,7 +2498,7 @@ class DictionaryManageWidget(QWidget):
                 filtered_word.append(word)
                 
         self.table_model.update_data(filtered_word)
-        self.stats_label.setText(f"Showing dat{len(filtered_word)} of {len(words)} entries")
+        self.stats_label.setText(f"Showing {len(filtered_word)} of {len(words)} entries")
 
     def cancel_edit(self):
         """Cancel edit mode and return to create mode"""
@@ -2869,7 +2874,7 @@ class KhmerEnglishDictionaryApp(QMainWindow):
             QTableWidget::pane{{
                 border: 1px solid #c0c0c0;
                 background-color: white;
-                font-family: '{self.font_manager.font_size}';
+                font-family: '{self.font_manager.get_font_family()}';
                 font-size: {self.font_manager.font_size}pt;
             }}
             QTabBar::tab{{
@@ -2925,6 +2930,7 @@ class KhmerEnglishDictionaryApp(QMainWindow):
                 border: 1px solid #cccccc;
                 border-raius: 3px;
             }}
+            
         """)
         
         centralwidget = QWidget()
